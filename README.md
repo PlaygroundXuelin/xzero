@@ -16,6 +16,13 @@ To start a web server for the application, run:
 
     lein run 
 
+repl
+```
+    lein figwheel
+    lein repl
+        (start)
+```
+
 ## License
 
 Copyright © 2018 FIXME
