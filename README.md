@@ -1,8 +1,11 @@
-# xzero
+# XZERO
 
-generated using Luminus version "3.10.22"
-
-FIXME
+## TODO
+* use datomic as database
+* cloud rest calls, api config, jobs schedule
+* json to datomic attributes
+* use integrant for component
+* X dashboard
 
 ## Prerequisites
 
@@ -23,6 +26,9 @@ repl
         (start)
 ```
 
+## References
+https://github.com/jgthms/bulma
+
 ## License
 
-Copyright © 2018 FIXME
+Copyright © 2018 xuelin

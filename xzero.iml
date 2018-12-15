@@ -33,6 +33,7 @@
     <orderEntry type="library" name="Leiningen: clj-tuple:0.2.2" level="project" />
     <orderEntry type="library" name="Leiningen: cljs-ajax:0.8.0" level="project" />
     <orderEntry type="library" name="Leiningen: cljsjs/create-react-class:15.6.3-0" level="project" />
+    <orderEntry type="library" name="Leiningen: cljsjs/d3:5.7.0-0" level="project" />
     <orderEntry type="library" name="Leiningen: cljsjs/popperjs:1.14.3-1" level="project" />
     <orderEntry type="library" name="Leiningen: cljsjs/prop-types:15.6.1-0" level="project" />
     <orderEntry type="library" name="Leiningen: cljsjs/react-dom-server:16.3.2-0" level="project" />
@@ -186,6 +187,7 @@
     <orderEntry type="library" name="Leiningen: re-frisk:0.5.4" level="project" />
     <orderEntry type="library" name="Leiningen: reagent:0.8.1" level="project" />
     <orderEntry type="library" name="Leiningen: realize:1.1.0" level="project" />
+    <orderEntry type="library" name="Leiningen: rid3:0.2.1" level="project" />
     <orderEntry type="library" name="Leiningen: riddley:0.1.12" level="project" />
     <orderEntry type="library" name="Leiningen: ring-cors:0.1.12" level="project" />
     <orderEntry type="library" name="Leiningen: ring-webjars:0.2.0" level="project" />

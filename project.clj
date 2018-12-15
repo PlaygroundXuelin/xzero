@@ -6,6 +6,8 @@
   :dependencies [[baking-soda "0.2.0" :exclusions [cljsjs/react-bootstrap]]
                  [ch.qos.logback/logback-classic "1.2.3"]
                  [cljs-ajax "0.8.0"]
+                 [cljsjs/d3 "5.7.0-0"]
+                 [rid3 "0.2.1"]
                  [cljsjs/react-popper "0.10.4-0"]
                  [cljsjs/react-transition-group "2.4.0-0"]
                  [clojure.java-time "0.3.2"]

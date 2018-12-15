@@ -8,6 +8,8 @@
             [markdown.core :refer [md->html]]
             [xzero.ajax :as ajax]
             [xzero.events]
+            [xzero.dashboard]
+            [xzero.cmd :as cmd]
             [reitit.core :as reitit]
             [clojure.string :as string])
   (:import goog.History))
@@ -34,7 +36,8 @@
      [b/NavbarToggler {:on-click #(swap! expanded? not)}]
      [b/Collapse {:is-open @expanded? :navbar true}
       [b/Nav {:class-name "mr-auto" :navbar true}
-       [nav-link "#/" "Home" :home]
+       [nav-link "#/cmd" "Command" :cmd]
+       [nav-link "#/dashboard" "Dashboard" :dashboard]
        [nav-link "#/about" "About" :about]]]]))
 
 (defn about-page []
@@ -52,6 +55,8 @@
 
 (def pages
   {:home #'home-page
+   :cmd #'cmd/cmd-page
+   :dashboard #'xzero.dashboard/dashboard-page
    :about #'about-page})
 
 (defn page []
@@ -65,6 +70,8 @@
 (def router
   (reitit/router
     [["/" :home]
+     ["/cmd" :cmd]
+     ["/dashboard" :dashboard]
      ["/about" :about]]))
 
 ;; -------------------------
@@ -87,8 +94,9 @@
   (r/render [#'page] (.getElementById js/document "app")))
 
 (defn init! []
+  (rf/dispatch-sync [:initialize-db])
   (rf/dispatch-sync [:navigate (reitit/match-by-name router :home)])
-  
+
   (ajax/load-interceptors!)
   (rf/dispatch [:fetch-docs])
   (hook-browser-navigation!)

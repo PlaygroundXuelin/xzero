@@ -1,5 +1,6 @@
 (ns xzero.events
   (:require [re-frame.core :as rf]
+            [xzero.db :as db]
             [ajax.core :as ajax]))
 
 ;;dispatchers
@@ -49,3 +50,17 @@
   :common/error
   (fn [db _]
     (:common/error db)))
+
+(rf/reg-sub
+  :cmd
+  (fn [db _]
+    (:cmd db)))
+
+;
+;
+;
+
+(rf/reg-event-db
+  :initialize-db
+  (fn [db _]
+    db/default-db))
