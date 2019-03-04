@@ -8,7 +8,7 @@
             [xzero.middleware.formats :as formats]
             [muuntaja.middleware :refer [wrap-format wrap-params]]
             [xzero.config :refer [env]]
-            [ring-ttl-session.core :refer [ttl-memory-store]]
+    ;            [ring-ttl-session.core :refer [ttl-memory-store]]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]])
   (:import 
            ))
@@ -44,5 +44,6 @@
       (wrap-defaults
         (-> site-defaults
             (assoc-in [:security :anti-forgery] false)
-            (assoc-in  [:session :store] (ttl-memory-store (* 60 30)))))
+            ;            (assoc-in  [:session :store] (ttl-memory-store (* 60 30)))
+            ))
       wrap-internal-error))

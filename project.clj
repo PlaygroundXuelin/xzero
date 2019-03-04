@@ -17,9 +17,6 @@
                  [cprop "0.1.13"]
                  [day8.re-frame/http-fx "0.1.6"]
                  [funcool/struct "1.3.0"]
-                 [luminus-jetty "0.1.7"]
-                 [luminus-transit "0.1.1"]
-                 [luminus/ring-ttl-session "0.3.2"]
                  [markdown-clj "1.0.5"]
                  [metosin/muuntaja "0.6.1"]
                  [metosin/reitit "0.2.9"]
@@ -39,6 +36,8 @@
                  [ring-webjars "0.2.0"]
                  [ring/ring-core "1.7.1"]
                  [ring/ring-defaults "0.3.2"]
+                 [derekchiang/ring-proxy "1.0.2"]
+                 [ring/ring-jetty-adapter "1.7.1"]
                  [secretary "1.2.3"]
                  [selmer "1.12.5"]]
 

@@ -1,6 +1,6 @@
 (ns xzero.ajax
   (:require [ajax.core :as ajax]
-            [luminus-transit.time :as time]
+    ;            [luminus-transit.time :as time]
             [cognitect.transit :as transit]
             [re-frame.core :as rf]))
 
@@ -18,8 +18,9 @@
   (merge {:raw             false
           :format          :transit
           :response-format :transit
-          :reader          (transit/reader :json time/time-deserialization-handlers)
-          :writer          (transit/writer :json time/time-serialization-handlers)}
+          ;          :reader          (transit/reader :json time/time-deserialization-handlers)
+          ;          :writer          (transit/writer :json time/time-serialization-handlers)
+          }
          opts))
 
 (defn load-interceptors! []
