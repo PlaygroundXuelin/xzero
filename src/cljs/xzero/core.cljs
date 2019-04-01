@@ -10,6 +10,7 @@
             [xzero.events]
             [xzero.dashboard]
             [xzero.cmd :as cmd]
+            [xzero.user :as user]
             [reitit.core :as reitit]
             [clojure.string :as string])
   (:import goog.History))
@@ -27,24 +28,27 @@
      :active (when (= page @(rf/subscribe [:page])) "active")}
     title]])
 
-(defn navbar []
-  (r/with-let [expanded? (r/atom true)]
-    [b/Navbar {:light true
-               :class-name "navbar-dark bg-primary"
-               :expand "md"}
-     [b/NavbarBrand {:href "/"} "xzero"]
-     [b/NavbarToggler {:on-click #(swap! expanded? not)}]
-     [b/Collapse {:is-open @expanded? :navbar true}
-      [b/Nav {:class-name "mr-auto" :navbar true}
-       [nav-link "#/cmd" "Command" :cmd]
-       [nav-link "#/dashboard" "Dashboard" :dashboard]
-       [nav-link "#/about" "About" :about]]]]))
+(defn user-link [login?]
+  [nav-link "#/user" (if login? "Logout" "Login") :user]
+  )
 
-(defn about-page []
-  [:div.container
-   [:div.row
-    [:div.col-md-12
-     [:img {:src "/img/warning_clojure.png"}]]]])
+(defn navbar []
+  (let [user @(rf/subscribe [:user])
+        login? (:login? user)]
+    (r/with-let [expanded? (r/atom true)]
+                [b/Navbar {:light true
+                           :class-name "navbar-dark bg-primary"
+                           :expand "md"}
+                 [b/NavbarBrand {:href "/"} "xzero"]
+                 [b/NavbarToggler {:on-click #(swap! expanded? not)}]
+                 [b/Collapse {:is-open @expanded? :navbar true}
+                  [b/Nav {:class-name "mr-auto" :navbar true}
+                   [nav-link "#/cmd" "Command" :cmd]
+                   [nav-link "#/dashboard" "Dashboard" :dashboard]
+                    [user-link login?]
+                   ]]])
+    )
+  )
 
 (defn home-page []
   [:div.container
@@ -57,7 +61,7 @@
   {:home #'home-page
    :cmd #'cmd/cmd-page
    :dashboard #'xzero.dashboard/dashboard-page
-   :about #'about-page})
+   :user #'user/user-page})
 
 (defn page []
   [:div
@@ -72,7 +76,7 @@
     [["/" :home]
      ["/cmd" :cmd]
      ["/dashboard" :dashboard]
-     ["/about" :about]]))
+     ["/user" :user]]))
 
 ;; -------------------------
 ;; History

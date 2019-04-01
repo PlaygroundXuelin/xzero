@@ -2,6 +2,7 @@
 
 (def default-db
   {:page :home
+   :user {:login? false}
    :cmd {:cmd-type "bash"
          :script {
                   "bash"

@@ -1,6 +1,7 @@
 (ns xzero.events
   (:require [re-frame.core :as rf]
             [xzero.db :as db]
+            [xzero.crypt :as crypt]
             [ajax.core :as ajax]))
 
 ;;dispatchers
@@ -55,6 +56,11 @@
   :cmd
   (fn [db _]
     (:cmd db)))
+
+(rf/reg-sub
+  :user
+  (fn [db _]
+    (:user db)))
 
 ;
 ;
@@ -115,4 +121,87 @@
                    :on-success      [:process-cmd-response]
                    :on-failure      [:process-cmd-response]}
       :db  (assoc-in db [:cmd :loading?] true)})))
+
+(defn hash-auth [user nonce]
+  (let [pw (:password user)
+        _ (assert (= 32 (count nonce)))
+        salted-pw (str nonce pw)
+        ]
+    {:email (:email user)
+     :nonce nonce
+     :password
+                (-> salted-pw
+                    (crypt/str-to-byte-array true)
+                    (crypt/byte-array-to-hash256 true)
+                    (crypt/byte-array-to-hash256 true)
+                    (crypt/byte-array-to-hex true))}
+    )
+  )
+
+(rf/reg-event-db
+  :process-user-data-response
+  []
+  (fn [db [_ response]] (process-response db [_ [:user :data] response])))
+
+(rf/reg-event-fx
+  :user-get-data
+  []
+  (fn [{:keys [db]} [_ list-name]]
+    (let
+      [user (get-in db [:user])]
+
+      {:http-xhrio {:method          :get
+                    :uri             "/user_get_data"
+                    :params          {:email (:email user)}
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-user-data-response]
+                    :on-failure      [:process-user-data-response]}
+       :db  (assoc-in db [:pm :data :loading?] true)})))
+
+(defn clear-init [db] (assoc db :init {}))
+
+(rf/reg-event-fx
+  :process-login-response
+  []
+  (fn [{:keys [db]} [_ response]]
+    (let [data (:data response)
+          login? (:login? data)
+          db1 (-> (clear-init db)
+                  (assoc-in [:user :login :error] (if login? "" "Email address or password doesn't match")))
+          db2 (assoc-in db1 [:user] (merge (get-in db1 [:user]) data))]
+
+      (if login?
+        {:db db2
+         :dispatch [:user-get-data nil]}
+        {:db db2}))))
+
+(rf/reg-event-fx
+  :process-nonce-response
+  []
+  (fn [{:keys [db]} [_ response]]
+    (let
+      [nonce (:nonce response)
+       user (get-in db [:user])]
+      {:http-xhrio {:method          :get
+                    :uri             "/login"
+                    :params          (hash-auth user nonce)
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-login-response]
+                    :on-failure      [:process-login-response]}
+       }
+      )))
+
+(rf/reg-event-fx
+  :login
+  []
+  (fn [{:keys [db]} [_]]
+    (let
+      [user (get-in db [:user])]
+      {:http-xhrio {:method          :get
+                    :uri             "/user_nonce"
+                    :params          {:email (:email user)}
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-nonce-response]
+                    :on-failure      [:process-nonce-response]}
+       })))
 
