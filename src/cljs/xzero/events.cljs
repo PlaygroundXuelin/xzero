@@ -183,7 +183,7 @@
       [nonce (:nonce response)
        user (get-in db [:user])]
       {:http-xhrio {:method          :get
-                    :uri             "/login"
+                    :uri             "/xzeros/user/login"
                     :params          (hash-auth user nonce)
                     :response-format (ajax/json-response-format {:keywords? true})
                     :on-success      [:process-login-response]
@@ -198,7 +198,7 @@
     (let
       [user (get-in db [:user])]
       {:http-xhrio {:method          :get
-                    :uri             "/user_nonce"
+                    :uri             "/xzeros/user/nonce"
                     :params          {:email (:email user)}
                     :response-format (ajax/json-response-format {:keywords? true})
                     :on-success      [:process-nonce-response]
