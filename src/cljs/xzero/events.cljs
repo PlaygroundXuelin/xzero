@@ -127,14 +127,11 @@
         _ (assert (= 32 (count nonce)))
         salted-pw (str nonce pw)
         ]
-    {:email (:email user)
-     :nonce nonce
-     :password
-                (-> salted-pw
-                    (crypt/str-to-byte-array true)
-                    (crypt/byte-array-to-hash256 true)
-                    (crypt/byte-array-to-hash256 true)
-                    (crypt/byte-array-to-hex true))}
+    (-> salted-pw
+        (crypt/str-to-byte-array true)
+        (crypt/byte-array-to-hash256 true)
+        (crypt/byte-array-to-hash256 true)
+        (crypt/byte-array-to-hex true))
     )
   )
 
@@ -164,11 +161,12 @@
   :process-login-response
   []
   (fn [{:keys [db]} [_ response]]
-    (let [data (:data response)
-          login? (:login? data)
+    (let [login? (:data response)
+          _ (println "response=" response)
+          _ (println "login?=" login?)
           db1 (-> (clear-init db)
                   (assoc-in [:user :login :error] (if login? "" "Email address or password doesn't match")))
-          db2 (assoc-in db1 [:user] (merge (get-in db1 [:user]) data))]
+          db2 (assoc-in db1 [:user] (merge (get-in db1 [:user]) {:login login?}))]
 
       (if login?
         {:db db2
@@ -180,11 +178,15 @@
   []
   (fn [{:keys [db]} [_ response]]
     (let
-      [nonce (:nonce response)
-       user (get-in db [:user])]
+      [nonce (:data response)
+       _ (println "nonce=" nonce)
+       user (get-in db [:user])
+       _ (println "hash=" (hash-auth user nonce))
+       _ (println "name=" (:email user))
+       ]
       {:http-xhrio {:method          :get
                     :uri             "/xzeros/user/login"
-                    :params          (hash-auth user nonce)
+                    :params          {:name (:email user) :password (hash-auth user nonce)}
                     :response-format (ajax/json-response-format {:keywords? true})
                     :on-success      [:process-login-response]
                     :on-failure      [:process-login-response]}
@@ -199,7 +201,7 @@
       [user (get-in db [:user])]
       {:http-xhrio {:method          :get
                     :uri             "/xzeros/user/nonce"
-                    :params          {:email (:email user)}
+                    :params          {:name (:email user)}
                     :response-format (ajax/json-response-format {:keywords? true})
                     :on-success      [:process-nonce-response]
                     :on-failure      [:process-nonce-response]}
