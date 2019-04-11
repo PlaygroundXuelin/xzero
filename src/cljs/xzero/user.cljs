@@ -5,21 +5,36 @@
 
 (defn user-page []
   (let [user @(rf/subscribe [:user])]
-    [:div.container
-     [:div.row [:div.col-md-2 "Email address: "]
-      [:div.col-md-6 [ui/text-input :update-value [[:user :email]] "text" (:email user) false nil]]]
+    (if (:login user)
+      [:div.container
+       [:div.row
+        [:div.col-md-2]
+        [:div.col-md-6
+         [:button.btn.btn-default.btn-sm {:on-click #(rf/dispatch [:logout]) :type "button" } "Logout"]]]
 
-     [:div.row
-      [:div.col-md-2 "Password: "]
-      [:div.col-md-6 [ui/text-input :update-value [[:user :password]] "password" (:password user) false nil]]
-      ]
-     [:div.row
-      [:div.col-md-2]
-      [:div.col-md-6
-       [:button.btn.btn-default.btn-sm {:on-click #(rf/dispatch [:login]) :type "button" } "Login"]]]
-     [:div.row
-      [:div.col-md-12
-       [:img {:src "/img/warning_clojure.png"}]]]
-     ]
+       [:div.row
+        [:div.col-md-12
+         [:img {:src "/img/warning_clojure.png"}]]]
+       ]
+
+      [:div.container
+       [:div.row [:div.col-md-2 "Email address: "]
+        [:div.col-md-6 [ui/text-input :update-value [[:user :email]] "text" (:email user) false nil]]]
+
+       [:div.row
+        [:div.col-md-2 "Password: "]
+        [:div.col-md-6 [ui/text-input :update-value [[:user :password]] "password" (:password user) false nil]]
+        ]
+       [:div.row
+        [:div.col-md-2]
+        [:div.col-md-6
+         [:button.btn.btn-default.btn-sm {:on-click #(rf/dispatch [:login]) :type "button" } "Login"]]]
+
+       [:div.row
+        [:div.col-md-12
+         [:img {:src "/img/warning_clojure.png"}]]]
+       ]
+
+      )
     )
   )

@@ -34,7 +34,7 @@
 
 (defn navbar []
   (let [user @(rf/subscribe [:user])
-        login? (:login? user)]
+        login? (:login user)]
     (r/with-let [expanded? (r/atom true)]
                 [b/Navbar {:light true
                            :class-name "navbar-dark bg-primary"
