@@ -30,6 +30,8 @@
         [:div.col-md-6
          [:button.btn.btn-default.btn-sm {:on-click #(rf/dispatch [:login]) :type "button" } "Login"]]]
 
+       [:div.row [:div.col-md-8 [:span.error (:error user)]]]
+
        [:div.row
         [:div.col-md-12
          [:img {:src "/img/warning_clojure.png"}]]]

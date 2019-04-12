@@ -29,7 +29,7 @@
     title]])
 
 (defn user-link [login?]
-  [nav-link "#/user" (if login? "Logout" "Login") :user]
+  [nav-link "#/user" "User" :user]
   )
 
 (defn navbar []
@@ -39,7 +39,7 @@
                 [b/Navbar {:light true
                            :class-name "navbar-dark bg-primary"
                            :expand "md"}
-                 [b/NavbarBrand {:href "/"} "xzero"]
+                 ;                                  [b/NavbarBrand {:href "/"} "xzero"]
                  [b/NavbarToggler {:on-click #(swap! expanded? not)}]
                  [b/Collapse {:is-open @expanded? :navbar true}
                   [b/Nav {:class-name "mr-auto" :navbar true}

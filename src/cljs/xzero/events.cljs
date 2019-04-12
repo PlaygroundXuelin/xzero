@@ -60,16 +60,43 @@
 (rf/reg-sub
   :user
   (fn [db _]
+    (println "user is " (:user db))
     (:user db)))
 
 ;
 ;
 ;
 
-(rf/reg-event-db
+(rf/reg-event-fx
+  :process-user-check-response
+  []
+  (fn [{:keys [db]} [_ response]]
+    (let [name (:data response)]
+(println "name is " name)
+      (if (clojure.string/blank? name)
+        {:db db
+         }
+        {:db (assoc db :user {:name name :login? true})}
+        ))))
+
+(rf/reg-event-fx
+  :initialize-user
+  []
+  (fn [{:keys [db]} _]
+    {:http-xhrio {:method          :get
+                  :uri             "/xzeros/user/check"
+                  :params          {}
+                  :response-format (ajax/json-response-format {:keywords? true})
+                  :on-success      [:process-user-check-response]
+                  :on-failure      [:process-user-check-response]}
+     }))
+
+(rf/reg-event-fx
   :initialize-db
-  (fn [db _]
-    db/default-db))
+  []
+  (fn [{:keys [db]} [_]]
+    {:db db/default-db
+     :dispatch [:initialize-user nil]}))
 
 (rf/reg-event-db
  :update-value
@@ -173,6 +200,7 @@
   :login
   []
   (fn [{:keys [db]} [_]]
+    (println "in login")
     (let
       [user (get-in db [:user])]
       {:http-xhrio {:method          :get
@@ -193,8 +221,8 @@
                     :uri             "/xzeros/user/logout"
                     :params          {:name (:email user)}
                     :response-format (ajax/json-response-format {:keywords? true})
-                    :on-success      [:process-nonce-response]
-                    :on-failure      [:process-nonce-response]}
+                    :on-success      []
+                    :on-failure      []}
        })))
 
 (rf/reg-event-fx
@@ -203,7 +231,8 @@
   (fn [{:keys [db]} [_]]
     (let
       [user (get-in db [:user])]
-      {:db (assoc-in db [:user] (merge (get-in db [:user]) {:user ""
+      {:db (assoc db :user (merge user {:email ""
+                                                            :password ""
                                                             :error ""
                                                             :login false}))
        :dispatch [:user-logout nil]}
