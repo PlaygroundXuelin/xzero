@@ -10,6 +10,7 @@
             [xzero.events]
             [xzero.dashboard]
             [xzero.cmd :as cmd]
+            [xzero.db :as db]
             [xzero.user :as user]
             [reitit.core :as reitit]
             [clojure.string :as string])
@@ -43,7 +44,9 @@
                  [b/NavbarToggler {:on-click #(swap! expanded? not)}]
                  [b/Collapse {:is-open @expanded? :navbar true}
                   [b/Nav {:class-name "mr-auto" :navbar true}
-                   [nav-link "#/cmd" "Command" :cmd]
+                   (if (db/hasPermission user [:page :cmd])
+                     [nav-link "#/cmd" "Command" :cmd]
+                     )
                    [nav-link "#/dashboard" "Dashboard" :dashboard]
                     [user-link login?]
                    ]]])

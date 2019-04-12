@@ -19,7 +19,7 @@
 
       [:div.container
        [:div.row [:div.col-md-2 "Email address: "]
-        [:div.col-md-6 [ui/text-input :update-value [[:user :email]] "text" (:email user) false nil]]]
+        [:div.col-md-6 [ui/text-input :update-value [[:user :name]] "text" (:name user) false nil]]]
 
        [:div.row
         [:div.col-md-2 "Password: "]

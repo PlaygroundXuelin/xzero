@@ -60,7 +60,6 @@
 (rf/reg-sub
   :user
   (fn [db _]
-    (println "user is " (:user db))
     (:user db)))
 
 ;
@@ -72,11 +71,10 @@
   []
   (fn [{:keys [db]} [_ response]]
     (let [name (:data response)]
-(println "name is " name)
       (if (clojure.string/blank? name)
         {:db db
          }
-        {:db (assoc db :user {:name name :login? true})}
+        {:db (assoc db :user {:name name :login true})}
         ))))
 
 (rf/reg-event-fx
@@ -189,7 +187,7 @@
        ]
       {:http-xhrio {:method          :get
                     :uri             "/xzeros/user/login"
-                    :params          {:name (:email user) :password (hash-auth user nonce)}
+                    :params          {:name (:name user) :password (hash-auth user nonce)}
                     :response-format (ajax/json-response-format {:keywords? true})
                     :on-success      [:process-login-response]
                     :on-failure      [:process-login-response]}
@@ -200,12 +198,11 @@
   :login
   []
   (fn [{:keys [db]} [_]]
-    (println "in login")
     (let
       [user (get-in db [:user])]
       {:http-xhrio {:method          :get
                     :uri             "/xzeros/user/nonce"
-                    :params          {:name (:email user)}
+                    :params          {:name (:name user)}
                     :response-format (ajax/json-response-format {:keywords? true})
                     :on-success      [:process-nonce-response]
                     :on-failure      [:process-nonce-response]}
@@ -219,7 +216,7 @@
       [user (get-in db [:user])]
       {:http-xhrio {:method          :get
                     :uri             "/xzeros/user/logout"
-                    :params          {:name (:email user)}
+                    :params          {:name (:name user)}
                     :response-format (ajax/json-response-format {:keywords? true})
                     :on-success      []
                     :on-failure      []}
@@ -231,7 +228,7 @@
   (fn [{:keys [db]} [_]]
     (let
       [user (get-in db [:user])]
-      {:db (assoc db :user (merge user {:email ""
+      {:db (assoc db :user (merge user {:name ""
                                                             :password ""
                                                             :error ""
                                                             :login false}))
