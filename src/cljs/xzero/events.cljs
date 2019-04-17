@@ -18,8 +18,9 @@
 
 (rf/reg-event-fx
   :fetch-docs
-  (fn [_ _]
+  (fn [{:keys [db]} _]
     {:http-xhrio {:method          :get
+                  :headers (db/authBearer db)
                   :uri             "/docs"
                   :response-format (ajax/raw-response-format)
                   :on-success       [:set-docs]}}))
@@ -70,11 +71,10 @@
   :process-user-check-response
   []
   (fn [{:keys [db]} [_ response]]
-    (let [name (:data response)]
-      (if (clojure.string/blank? name)
-        {:db db
-         }
-        {:db (assoc db :user {:name name :login true})}
+    (let [bearer (:data response)]
+      (if (clojure.string/blank? bearer)
+        {:db (assoc db :user {:name name :bearer nil})}
+        {:db (assoc db :user {:name name :bearer bearer})}
         ))))
 
 (rf/reg-event-fx
@@ -82,6 +82,7 @@
   []
   (fn [{:keys [db]} _]
     {:http-xhrio {:method          :get
+                  :headers (db/authBearer db)
                   :uri             "/xzeros/user/check"
                   :params          {}
                   :response-format (ajax/json-response-format {:keywords? true})
@@ -133,12 +134,14 @@
  :execute-cmd
  []
  (fn [{:keys [db]} [_]]
+   (println "before execute-cmd db is: " db)
    (let
      [cmd (:cmd db)
       cmd-type (or (:cmd-type cmd) "bash")
       script (or (get (:script cmd) cmd-type) "")
       params {"cmd-type" cmd-type "script" script}]
      {:http-xhrio {:method          :post
+                   :headers (db/authBearer db)
                    :uri             "/xzeros/cmd/execute"
                    :format          (ajax/json-request-format)
                    :params          params
@@ -166,12 +169,14 @@
   :process-login-response
   []
   (fn [{:keys [db]} [_ response]]
-    (let [login? (:data response)
-          db-error-login (assoc-in db [:user] (merge (get-in db [:user]) {:error "Email address or password doesn't match"
-                                                                          :login false}))
-          db-login (assoc-in db [:user] (merge (get-in db [:user]) {:error "" :password ""  :login true}))]
+    (println "response is: " response)
+    (let [bearer (:data response)
+          _ (println "bearer is " bearer)
+          db-error-login (assoc-in db [:user] (merge (:user db) {:error "Email address or password doesn't match"
+                                                                          :bearer nil}))
+          db-login (assoc-in db [:user] (merge (:user db) {:error "" :password ""  :bearer bearer}))]
 
-      (if login?
+      (if bearer
         {:db db-login
          ;         :dispatch [:user-get-data nil]
          }
@@ -215,6 +220,7 @@
     (let
       [user (get-in db [:user])]
       {:http-xhrio {:method          :get
+                    :headers (db/authBearer db)
                     :uri             "/xzeros/user/logout"
                     :params          {:name (:name user)}
                     :response-format (ajax/json-response-format {:keywords? true})
@@ -231,7 +237,7 @@
       {:db (assoc db :user (merge user {:name ""
                                                             :password ""
                                                             :error ""
-                                                            :login false}))
+                                                            :bearer nil}))
        :dispatch [:user-logout nil]}
 )))
 
