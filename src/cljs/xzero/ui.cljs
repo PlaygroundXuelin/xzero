@@ -14,7 +14,7 @@
      (merge
        {
         :type input-type
-        :default-value init-val
+        :default-value (or init-val "")
         :on-blur (partial save nil)
         :on-change #(let [new-val (-> % .-target .-value)]
                       (if save-on-change? (save new-val) (reset! val new-val)))

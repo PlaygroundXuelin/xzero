@@ -59,6 +59,11 @@
     (:cmd db)))
 
 (rf/reg-sub
+  :lst
+  (fn [db _]
+    (:lst db)))
+
+(rf/reg-sub
   :user
   (fn [db _]
     (:user db)))
@@ -216,11 +221,11 @@
 (rf/reg-event-fx
   :user-logout
   []
-  (fn [{:keys [db]} [_]]
+  (fn [{:keys [db]} [_ auth-header]]
     (let
       [user (get-in db [:user])]
       {:http-xhrio {:method          :get
-                    :headers (db/authBearer db)
+                    :headers auth-header
                     :uri             "/xzeros/user/logout"
                     :params          {:name (:name user)}
                     :response-format (ajax/json-response-format {:keywords? true})
@@ -238,6 +243,41 @@
                                                             :password ""
                                                             :error ""
                                                             :bearer nil}))
-       :dispatch [:user-logout nil]}
+       :dispatch [:user-logout (db/authBearer db)]}
 )))
 
+
+(rf/reg-event-fx
+  :process-load-lst-response
+  []
+  (fn [{:keys [db]} [_ lst-name]]
+    (let
+      [lst-data (:data response)
+       error (:error response)
+       ]
+      (if error
+        {:db (assoc-in db [:lst :error] error)}
+        {:db (assoc-in (assoc db :error nil) [:lst :lsts lst-name] lst-data)}
+        )
+      )))
+
+(rf/reg-event-fx
+  :load-lst
+  []
+  (fn [{:keys [db]} [_ lst-name]]
+    (let
+      [lst (:lst db)
+       lsts (:lsts lst)
+       the-lst (get lsts lst-name)]
+      (if (nil? the-lst)
+        {:http-xhrio {:method          :get
+                      :uri             "/xzeros/lst/getOrNew"
+                      :params          {:name lst-name}
+                      :response-format (ajax/json-response-format {:keywords? true})
+                      :on-success      [:process-load-lst-response]
+                      :on-failure      [:process-load-lst-response]}
+         }
+
+        {:db db :dispatch [:get-lst lst-name]}
+        )
+      )))

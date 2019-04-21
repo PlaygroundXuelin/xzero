@@ -10,6 +10,7 @@
             [xzero.events]
             [xzero.dashboard]
             [xzero.cmd :as cmd]
+            [xzero.lst :as lst]
             [xzero.db :as db]
             [xzero.user :as user]
             [reitit.core :as reitit]
@@ -47,6 +48,9 @@
                    (if (db/hasPermission user [:page :cmd])
                      [nav-link "#/cmd" "Command" :cmd]
                      )
+                   (if (db/hasPermission user [:page :lst])
+                     [nav-link "#/lst" "List" :lst]
+                     )
                    [nav-link "#/dashboard" "Dashboard" :dashboard]
                     [user-link login?]
                    ]]])
@@ -63,6 +67,7 @@
 (def pages
   {:home #'home-page
    :cmd #'cmd/cmd-page
+   :lst #'lst/lst-page
    :dashboard #'xzero.dashboard/dashboard-page
    :user #'user/user-page})
 
@@ -78,6 +83,7 @@
   (reitit/router
     [["/" :home]
      ["/cmd" :cmd]
+     ["/lst" :lst]
      ["/dashboard" :dashboard]
      ["/user" :user]]))
 
