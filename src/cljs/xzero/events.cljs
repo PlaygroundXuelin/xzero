@@ -252,7 +252,7 @@
   []
   (fn [{:keys [db]} [_ lst-name]]
     (let
-      [lst-data (:data response)
+      [{:keys [lst-id items] :as lst-data} (:data response)
        error (:error response)
        ]
       (if error

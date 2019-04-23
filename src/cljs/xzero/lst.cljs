@@ -54,7 +54,7 @@
                        [:div.col-md-5
                           [ui/text-input :update-value [[:lst :new-row :name]] "text" new-row-name false {:size 30}]
                         [:br]
-                        [:button.btn.btn-default.btn-sm {:on-click #(rf/dispatch [:pm-add-item nil]) :type "button" } "Add New Item"]
+                        [:button.btn.btn-default.btn-sm {:on-click #(rf/dispatch [:lst-add-item nil]) :type "button" } "Add New Item"]
                         [:br]
                         [:button.btn.btn-default.btn-sm
                          {:on-click #(new-window "" (to-csv current-lst [:id :name :value] name)) :type "button" } "Export"]
