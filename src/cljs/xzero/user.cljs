@@ -5,7 +5,6 @@
 
 (defn user-page []
   (let [user @(rf/subscribe [:user])]
-    (println "in user page: " (:bearer user))
     (if (:bearer user)
       [:div.container
        [:div.row

@@ -174,16 +174,14 @@
   :process-login-response
   []
   (fn [{:keys [db]} [_ response]]
-    (println "response is: " response)
     (let [bearer (:data response)
-          _ (println "bearer is " bearer)
           db-error-login (assoc-in db [:user] (merge (:user db) {:error "Email address or password doesn't match"
                                                                           :bearer nil}))
           db-login (assoc-in db [:user] (merge (:user db) {:error "" :password ""  :bearer bearer}))]
 
       (if bearer
         {:db db-login
-         ;         :dispatch [:user-get-data nil]
+          :dispatch [:load-user-data nil]
          }
         {:db db-error-login}))))
 
@@ -250,7 +248,7 @@
 (rf/reg-event-fx
   :process-load-lst-response
   []
-  (fn [{:keys [db]} [_ lst-name]]
+  (fn [{:keys [db]} [_ lst-name response]]
     (let
       [{:keys [lst-id items] :as lst-data} (:data response)
        error (:error response)
@@ -269,15 +267,96 @@
       [lst (:lst db)
        lsts (:lsts lst)
        the-lst (get lsts lst-name)]
-      (if (nil? the-lst)
-        {:http-xhrio {:method          :get
-                      :uri             "/xzeros/lst/getOrNew"
-                      :params          {:name lst-name}
-                      :response-format (ajax/json-response-format {:keywords? true})
-                      :on-success      [:process-load-lst-response]
-                      :on-failure      [:process-load-lst-response]}
-         }
+      {:http-xhrio {:method          :post
+                    :uri             "/xzeros/lst/getOrNew"
+                    :headers         (db/authBearer db)
+                    :format          (ajax/json-request-format)
+                    :params          {:name lst-name}
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-load-lst-response lst-name]
+                    :on-failure      [:process-load-lst-response lst-name]}
+       }
+      )))
 
-        {:db db :dispatch [:get-lst lst-name]}
+(rf/reg-event-fx
+  :load-user-data
+  []
+  (fn [{:keys [db]} [_]]
+    {:db db :dispatch [:load-lst "account"]}
+    ))
+
+(rf/reg-event-fx
+  :process-lst-add-item-response
+  []
+  (fn [{:keys [db]} [_ lst-name response]]
+    (let
+      [lst-id (:data response)
+       error (:error response)
+       ]
+      (if error
+        {:db (assoc-in db [:lst :error] error)}
+        (let [curr-items (get-in db [:lst :lsts lst-name :items])
+              new-item (get-in db [:lst :new-item])]
+          {:db (assoc-in (assoc db :error nil) [:lst :lsts lst-name :items] (into curr-items [new-item]))}
+          )
         )
       )))
+
+(rf/reg-event-fx
+  :lst-add-item
+  []
+  (fn [{:keys [db]} [_ lst-name]]
+    {:http-xhrio {:method          :post
+                  :headers         (db/authBearer db)
+                  :uri             "/xzeros/lst/addItems"
+                  :format          (ajax/json-request-format)
+                  :params          {:name lst-name :items [(get-in db [:lst :new-row])]}
+                  :response-format (ajax/json-response-format {:keywords? true})
+                  :on-success      [:process-lst-add-item-response lst-name]
+                  :on-failure      [:process-lst-add-item-response lst-name]}
+     }
+    )
+  )
+
+(rf/reg-event-fx
+  :process-lst-update-item-response
+  []
+  (fn [{:keys [db]} [_ lst-name response]]
+    (let
+      [lst-id (:data response)
+       error (:error response)
+       ]
+      {:db db}
+      )))
+
+(rf/reg-event-fx
+  :update-items
+  []
+  (fn [{:keys [db]} [_ [lst-name idx] val]]
+    (let [new-items (assoc (get-in db [:lst :lsts lst-name :items]) idx val)]
+      {:http-xhrio {:method          :post
+                    :headers         (db/authBearer db)
+                    :uri             "/xzeros/lst/updateItems"
+                    :format          (ajax/json-request-format)
+                    :params          {:name lst-name :items [val] :index idx}
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-lst-update-item-response lst-name]
+                    :on-failure      [:process-lst-update-item-response lst-name]}
+       }
+      )
+    )
+  )
+
+(rf/reg-event-fx
+  :update-item
+  []
+  (fn [{:keys [db]} [_ [lst-name idx] val]]
+    (let [new-items (assoc (get-in db [:lst :lsts lst-name :items]) idx val)]
+      {
+       :db (assoc-in db [:lst :lsts lst-name :items] new-items)
+       :dispatch
+           [:update-items [lst-name idx] val]
+       }
+      )
+    )
+  )
