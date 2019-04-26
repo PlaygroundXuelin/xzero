@@ -64,6 +64,11 @@
     (:lst db)))
 
 (rf/reg-sub
+  :lst-not-editing?
+  (fn [db _]
+    (nil? (get-in db [:lst :editing-id]))))
+
+(rf/reg-sub
   :user
   (fn [db _]
     (:user db)))
@@ -139,7 +144,6 @@
  :execute-cmd
  []
  (fn [{:keys [db]} [_]]
-   (println "before execute-cmd db is: " db)
    (let
      [cmd (:cmd db)
       cmd-type (or (:cmd-type cmd) "bash")
@@ -310,11 +314,54 @@
                   :headers         (db/authBearer db)
                   :uri             "/xzeros/lst/addItems"
                   :format          (ajax/json-request-format)
-                  :params          {:name lst-name :items [(get-in db [:lst :new-row])]}
+                  :params          {:name lst-name :items [(get-in db [:lst :new-item])]}
                   :response-format (ajax/json-response-format {:keywords? true})
                   :on-success      [:process-lst-add-item-response lst-name]
                   :on-failure      [:process-lst-add-item-response lst-name]}
      }
+    )
+  )
+
+(rf/reg-event-fx
+  :process-lst-delete-item-response
+  []
+  (fn [{:keys [db]} [_ lst-name idx response]]
+    (let
+      [lst-id (:data response)
+       error (:error response)
+       ]
+      (if error
+        {:db (assoc-in db [:lst :error] error)}
+        (let [curr-items (get-in db [:lst :lsts lst-name :items])
+              new-items (into (subvec curr-items 0 idx) (subvec curr-items (inc idx)))
+              ]
+          {:db
+           (
+             -> db
+                (assoc-in [:lst :error] nil)
+                (assoc-in [:lst :editing-id] nil)
+                (assoc-in [:lst :lsts lst-name :items] new-items)
+             )
+           }
+          )
+        )
+      )))
+
+(rf/reg-event-fx
+  :lst-delete-item
+  []
+  (fn [{:keys [db]} [_ lst-name]]
+    (let [idx (get-in db [:lst :editing-id])]
+      {:http-xhrio {:method          :post
+                    :headers         (db/authBearer db)
+                    :uri             "/xzeros/lst/deleteItem"
+                    :format          (ajax/json-request-format)
+                    :params          {:name lst-name :index idx}
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-lst-delete-item-response lst-name idx]
+                    :on-failure      [:process-lst-delete-item-response lst-name idx]}
+       }
+      )
     )
   )
 

@@ -20,25 +20,13 @@
 (defn pm-readonly-row [idx item]
   [:div.row
    [:div.col-md-8
-    [:span {:on-click #(rf/dispatch [:update-value [:lst :editing-id] idx])} item]]])
+    [:span {:on-click #(rf/dispatch [:update-value [:lst :editing-id] idx])} item]]
+   ])
 
 (defn pm-row [idx item editing]
   (if editing
     [pm-editable-row idx item]
     [pm-readonly-row idx item]))
-
-
-(defn to-name-val [nv]
-  (if (clojure.string/blank? nv)
-    ["" ""]
-    (let [index (.indexOf nv ":")]
-      (if (neg? index)
-        [nv ""]
-        [(.substring nv 0 index) (.substring nv (inc index))]
-        )
-      )
-    )
-  )
 
 (defn lst-page []
   (let [
@@ -52,7 +40,7 @@
               lst @(rf/subscribe [:lst])
               current-lst-name account-lst-name
 
-              new-row-value (:new-row lst)
+              new-item-value (:new-item lst)
               lsts (:lsts lst)
               current-lst (get lsts current-lst-name)
               items (:items current-lst)
@@ -68,11 +56,14 @@
                          {:on-click #(new-window "" (to-csv current-lst [:id :name :value] name)) :type "button" } "Export"]
                         ]
 
-                       [:div.col-md-8 [ui/textarea-input :update-value [[:lst :new-row]] new-row-value {:rows 3 :cols 30}]]
+                       [:div.col-md-8 [ui/textarea-input :update-value [[:lst :new-item]] new-item-value {:rows 3 :cols 30}]]
                        ]
               filter-str (or (:filter lst) "")
               filter-row [:div.row>div.col-md-12 "Filter: "
-                          [ui/text-input :update-value [[:lst :filter]] "text" filter-str true nil]]
+                          [ui/text-input :update-value [[:lst :filter]] "text" filter-str true nil]
+                          [:button.btn.btn-default.btn-sm
+                            {:disabled @(rf/subscribe [:lst-not-editing?]) :on-click #(rf/dispatch [:lst-delete-item account-lst-name]) :type "button" } "Delete"]
+                          ]
               index-items                                 (map-indexed
                                                           (fn [idx item] [idx item])
                                                           items
@@ -89,7 +80,7 @@
               rows (map
                      (fn [[idx item]]
                        [pm-row idx item (= idx editing-id)])
-                     (sort-by (fn [x y] (compare (second x) (second y))) filtered-items)
+                     (sort-by second compare filtered-items)
                      )
               ]
                     (into [] (concat [:div.container add-row [:hr] filter-row] rows))
