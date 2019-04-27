@@ -1,8 +1,27 @@
 (ns xzero.events
   (:require [re-frame.core :as rf]
             [xzero.db :as db]
+            [xzero.utils :as utils]
             [xzero.crypt :as crypt]
             [ajax.core :as ajax]))
+
+(defn encrypt [vals k]
+  (let [aes (crypt/new-aes k)]
+    (mapv #(crypt/byte-array-to-hex (crypt/aes-encrypt-str aes % true) true) vals)))
+
+(defn encrypt-item [val k]
+  (first (encrypt [val] k))
+  )
+
+(defn decrypt [vals k]
+  (let [aes (crypt/new-aes k)]
+    (mapv
+      #(.trim (crypt/byte-array-to-str (crypt/aes-decrypt-bytes aes (crypt/hex-to-byte-array % true) true) true))
+      vals)))
+
+(defn decrypt-item [val k]
+  (first (decrypt [val] k))
+  )
 
 ;;dispatchers
 
@@ -172,16 +191,50 @@
     )
   )
 
+(defn hash-auth-local [user nonce]
+  (let [pw (:password user)
+        ;        _ (assert (= 32 (count nonce)))
+        salted-pw (str pw nonce)
+        ]
+    (-> salted-pw
+        (crypt/str-to-byte-array true)
+        (crypt/byte-array-to-hash256 true)
+        (crypt/byte-array-to-hash256 true)
+        (crypt/byte-array-to-hex true))
+    )
+  )
+
+(defn encrypt-client [vals user]
+  (let [k (:local-hash user)]
+    (encrypt vals k)
+    )
+  )
+
+(defn encrypt-item-client [val user]
+  (first (encrypt-client [val] user))
+  )
+
+(defn decrypt-client [vals user]
+  (let [k (:local-hash user)]
+    (decrypt vals k)
+    )
+  )
+
+(defn decrypt-item-client [val user]
+  (first (decrypt-client [val] user))
+  )
+
 (defn clear-init [db] (assoc db :init {}))
 
 (rf/reg-event-fx
   :process-login-response
   []
-  (fn [{:keys [db]} [_ response]]
+  (fn [{:keys [db]} [_ nonce response]]
     (let [bearer (:data response)
+          user (get-in db [:user])
           db-error-login (assoc-in db [:user] (merge (:user db) {:error "Email address or password doesn't match"
                                                                           :bearer nil}))
-          db-login (assoc-in db [:user] (merge (:user db) {:error "" :password ""  :bearer bearer}))]
+          db-login (assoc-in db [:user] (merge (:user db) {:error "" :password ""  :local-hash (hash-auth-local user nonce) :bearer bearer}))]
 
       (if bearer
         {:db db-login
@@ -201,8 +254,8 @@
                     :uri             "/xzeros/user/login"
                     :params          {:name (:name user) :password (hash-auth user nonce)}
                     :response-format (ajax/json-response-format {:keywords? true})
-                    :on-success      [:process-login-response]
-                    :on-failure      [:process-login-response]}
+                    :on-success      [:process-login-response nonce]
+                    :on-failure      [:process-login-response nonce]}
        }
       )))
 
@@ -259,7 +312,7 @@
        ]
       (if error
         {:db (assoc-in db [:lst :error] error)}
-        {:db (assoc-in (assoc db :error nil) [:lst :lsts lst-name] lst-data)}
+        {:db (assoc-in (assoc db :error nil) [:lst :lsts lst-name] {:list-id lst-id :items (decrypt-client items (:user db))})}
         )
       )))
 
@@ -310,15 +363,17 @@
   :lst-add-item
   []
   (fn [{:keys [db]} [_ lst-name]]
-    {:http-xhrio {:method          :post
-                  :headers         (db/authBearer db)
-                  :uri             "/xzeros/lst/addItems"
-                  :format          (ajax/json-request-format)
-                  :params          {:name lst-name :items [(get-in db [:lst :new-item])]}
-                  :response-format (ajax/json-response-format {:keywords? true})
-                  :on-success      [:process-lst-add-item-response lst-name]
-                  :on-failure      [:process-lst-add-item-response lst-name]}
-     }
+    (let [new-item (encrypt-item-client (get-in db [:lst :new-item]) (:user db))]
+      {:http-xhrio {:method          :post
+                    :headers         (db/authBearer db)
+                    :uri             "/xzeros/lst/addItems"
+                    :format          (ajax/json-request-format)
+                    :params          {:name lst-name :items [new-item]}
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-lst-add-item-response lst-name]
+                    :on-failure      [:process-lst-add-item-response lst-name]}
+       }
+      )
     )
   )
 
@@ -402,7 +457,43 @@
       {
        :db (assoc-in db [:lst :lsts lst-name :items] new-items)
        :dispatch
-           [:update-items [lst-name idx] val]
+           [:update-items [lst-name idx] (encrypt-item-client val (:user db))]
+       }
+      )
+    )
+  )
+
+(rf/reg-event-fx
+  :process-lst-import-text-response
+  []
+  (fn [{:keys [db]} [_ lst-name response]]
+    (let
+      [lst-id (:data response)
+       error (:error response)
+       ]
+      (if error
+        {:db (assoc-in db [:lst :error] error)}
+        (let [curr-items (get-in db [:lst :lsts lst-name :items])
+              new-plain-items (utils/from-text (get-in db [:lst :new-item]))]
+          {:db (assoc-in (assoc db :error nil) [:lst :lsts lst-name :items] (into curr-items new-plain-items))}
+          )
+        )
+      )))
+
+(rf/reg-event-fx
+  :lst-import-text
+  []
+  (fn [{:keys [db]} [_ lst-name]]
+    (let [new-plain-items (utils/from-text (get-in db [:lst :new-item]))
+          new-items (encrypt-client new-plain-items (:user db))]
+      {:http-xhrio {:method          :post
+                    :headers         (db/authBearer db)
+                    :uri             "/xzeros/lst/addItems"
+                    :format          (ajax/json-request-format)
+                    :params          {:name lst-name :items new-items}
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-lst-import-text-response lst-name]
+                    :on-failure      [:process-lst-import-text-response lst-name]}
        }
       )
     )

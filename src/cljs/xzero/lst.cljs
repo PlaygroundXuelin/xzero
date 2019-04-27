@@ -2,10 +2,11 @@
   (:require
     [re-frame.core :as rf]
     [xzero.ui :as ui]
+    [xzero.crypt :as crypt]
     [clojure.string :as str]
     [xzero.db :as db]
     [cljs.pprint :as pprint]
-    [xzero.utils :refer [new-window to-csv]]
+    [xzero.utils :refer [to-csv to-text]]
     )
   )
 
@@ -14,13 +15,13 @@
 (defn pm-editable-row [idx item]
   [:div.row
    [:div.col-md-8
-    [ui/text-input :update-item [[account-lst-name idx] ] "text" item false nil]
+    [ui/textarea-input :update-item [[account-lst-name idx] ] item false {:rows 3 :cols 80}]
     ]])
 
 (defn pm-readonly-row [idx item]
   [:div.row
    [:div.col-md-8
-    [:span {:on-click #(rf/dispatch [:update-value [:lst :editing-id] idx])} item]]
+    [:pre {:on-click #(rf/dispatch [:update-value [:lst :editing-id] idx])} item]]
    ])
 
 (defn pm-row [idx item editing]
@@ -46,17 +47,23 @@
               items (:items current-lst)
               editing-id (:editing-id lst)
               output (if-let [loading? (:loading? lst)] "loading..." (str "What?"))
-              set-item (fn [text] (rf/dispatch [:update-value [:lst :lsts current-lst-name editing-id] text]))
 
+              buttons-row [:div.row
+                           [:div.col-md-2
+                            [:button.btn.btn-default.btn-sm
+                             {:on-click #(ui/new-window "" (to-csv items (fn [item] [item]) ["account"])) :type "button" } "Export to CSV"]
+                            [:button.btn.btn-default.btn-sm
+                            {:on-click #(ui/new-window "" (to-text items)) :type "button" } "Export as text"]
+                            [:button.btn.btn-default.btn-sm
+                             {:on-click  #(rf/dispatch [:lst-import-text account-lst-name])   :type "button" } "Import from text"]
+                            ]
+                           ]
               add-row [:div.row
                        [:div.col-md-2
                         [:button.btn.btn-default.btn-sm {:on-click #(rf/dispatch [:lst-add-item account-lst-name]) :type "button" } "Add New Item"]
-                        [:br]
-                        [:button.btn.btn-default.btn-sm
-                         {:on-click #(new-window "" (to-csv current-lst [:id :name :value] name)) :type "button" } "Export"]
                         ]
 
-                       [:div.col-md-8 [ui/textarea-input :update-value [[:lst :new-item]] new-item-value {:rows 3 :cols 30}]]
+                       [:div.col-md-8 [ui/textarea-input :update-value [[:lst :new-item]] new-item-value false {:rows 3 :cols 80}]]
                        ]
               filter-str (or (:filter lst) "")
               filter-row [:div.row>div.col-md-12 "Filter: "
@@ -83,7 +90,7 @@
                      (sort-by second compare filtered-items)
                      )
               ]
-                    (into [] (concat [:div.container add-row [:hr] filter-row] rows))
+                    (into [] (concat [:div.container buttons-row add-row [:hr] filter-row] rows))
           )
         ]
        ]

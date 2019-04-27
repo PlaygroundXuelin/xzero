@@ -59,7 +59,7 @@
 
 
      [:div
-      [ui/textarea-input :update-value [[:cmd :script cmd-type]] (get-in cmd [:script cmd-type]) {:rows 10 :cols 50}]
+      [ui/textarea-input :update-value [[:cmd :script cmd-type]] (get-in cmd [:script cmd-type]) false {:rows 10 :cols 50}]
       ]
 
      [:div

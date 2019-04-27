@@ -24,15 +24,30 @@
                         nil)}
        props)]))
 
-(defn textarea-input [event-id event-params val props]
-  (let [save #(rf/dispatch (into [] (concat [event-id] event-params [%])))]
+
+(defn textarea-input [event-id event-params init-val save-on-change? props]
+  (let [val (r/atom init-val)
+        save #(rf/dispatch (into [] (concat [event-id] event-params [(if (nil? %) @val %)])))
+        save-on-change #(rf/dispatch (into [] (concat [event-id] event-params [@val])))]
     [:textarea
      (merge
        {
-        :value val
-        :on-change #(save (-> % .-target .-value))
+        :default-value (or init-val "")
+        :on-blur (partial save nil)
+        :on-change #(let [new-val (-> % .-target .-value)]
+                      (if save-on-change? (save new-val) (reset! val new-val)))
         }
        props)]))
+
+;(defn textarea-input [event-id event-params val props]
+;  (let [save #(rf/dispatch (into [] (concat [event-id] event-params [%])))]
+;    [:textarea
+;     (merge
+;       {
+;        :value val
+;        :on-change #(save (-> % .-target .-value))
+;        }
+;       props)]))
 
 (defn raw-textbox [props text]
   (when text
@@ -61,5 +76,35 @@
           )
         ]
     (into [:div.container] (interpose [:div [:hr]] items))
+    )
+  )
+
+(defn new-window [url content]
+  (let [win (.open js/window url "_blank")
+        _ (-> win
+              (.-document)
+              (.open)
+              (.write "<html><head/><body></body></html>"))
+        ]
+    (if (some? content)
+
+      (let [
+            init-fn (fn []
+                      (let [doc (.-document win)
+                            pre (.createElement doc "pre")
+                            _ (set! (.-innerText pre) content)
+                            body (.-body doc)
+                            ]
+                        (.appendChild body pre)
+                        )
+                      )
+            ]
+        (init-fn)
+        ;        (set! (.-onload win) init-fn)
+        win
+        )
+      )
+    ;    (.close win)
+
     )
   )
