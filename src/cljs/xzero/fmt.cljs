@@ -1,4 +1,4 @@
-(ns xzero.utils
+(ns xzero.fmt
   (:require [clojure.string])
   )
 
@@ -28,7 +28,7 @@
     )
   )
 
-(def text-sep "\n\n====================================\n\n")
+(def text-sep "\n\n== ==\n\n")
 
 (defn to-text [lst]
   (clojure.string/join text-sep lst)

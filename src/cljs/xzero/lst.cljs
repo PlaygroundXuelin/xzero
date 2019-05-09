@@ -6,7 +6,7 @@
     [clojure.string :as str]
     [xzero.db :as db]
     [cljs.pprint :as pprint]
-    [xzero.utils :refer [to-csv to-text]]
+    [xzero.fmt :refer [to-csv to-text]]
     )
   )
 

@@ -1,7 +1,7 @@
 (ns xzero.events
   (:require [re-frame.core :as rf]
             [xzero.db :as db]
-            [xzero.utils :as utils]
+            [xzero.fmt :as utils]
             [xzero.crypt :as crypt]
             [ajax.core :as ajax]))
 
@@ -102,12 +102,12 @@
   (fn [{:keys [db]} [_ response]]
     (let [bearer (:data response)]
       (if (clojure.string/blank? bearer)
-        {:db (assoc db :user {:name name :bearer nil})}
+        {:db (assoc db :user {:name name :bearer nil} :lst {})}
         {:db (assoc db :user {:name name :bearer bearer})}
         ))))
 
 (rf/reg-event-fx
-  :initialize-user
+  :check-user
   []
   (fn [{:keys [db]} _]
     {:http-xhrio {:method          :get
@@ -121,10 +121,9 @@
 
 (rf/reg-event-fx
   :initialize-db
-  []
-  (fn [{:keys [db]} [_]]
+  [] 
     {:db db/default-db
-     :dispatch [:initialize-user nil]}))
+     :dispatch [:check-user nil]}))
 
 (rf/reg-event-db
  :update-value

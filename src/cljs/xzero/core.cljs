@@ -12,6 +12,7 @@
             [xzero.cmd :as cmd]
             [xzero.lst :as lst]
             [xzero.db :as db]
+            [xzero.async]
             [xzero.user :as user]
             [reitit.core :as reitit]
             [clojure.string :as string])
@@ -111,6 +112,11 @@
   (rf/dispatch-sync [:navigate (reitit/match-by-name router :home)])
 
   (ajax/load-interceptors!)
+
+  (xzero.async/bg-task 300000 300000
+                       (fn [cnt ms] ms)
+                       (fn [] (rf/dispatch [:check-user])))
+
   (rf/dispatch [:fetch-docs])
   (hook-browser-navigation!)
   (mount-components))
