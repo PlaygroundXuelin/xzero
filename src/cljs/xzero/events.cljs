@@ -92,6 +92,12 @@
   (fn [db _]
     (:user db)))
 
+(rf/reg-sub
+  :cloud
+  (fn [db _]
+    (:cloud db)))
+
+
 ;
 ;
 ;
@@ -121,9 +127,12 @@
 
 (rf/reg-event-fx
   :initialize-db
-  [] 
+  []
+  (fn [_ _]
     {:db db/default-db
-     :dispatch [:check-user nil]}))
+     :dispatch [:check-user nil]}
+    )
+  )
 
 (rf/reg-event-db
  :update-value
@@ -497,3 +506,38 @@
       )
     )
   )
+
+(rf/reg-event-fx
+  :process-load-cloud-response
+  []
+  (fn [{:keys [db]} [_ cloud-id response]]
+    (let
+      [cloud-data (:data response)
+       error (:error response)
+       ]
+      (if error
+        {:db (assoc-in db [:cloud :error] error)}
+        {:db (assoc-in (assoc db :error nil) [:cloud :clouds :cloud-id] cloud-data)}
+        )
+      )))
+
+
+(rf/reg-event-fx
+  :load-cloud
+  []
+  (fn [{:keys [db]} [_ cloud-id]]
+    (let
+      [cloud (:cloud db)
+       clouds (:clouds cloud)
+       the-cloud (get clouds cloud-id)]
+      {:http-xhrio {:method          :post
+                    :uri             "/xzeros/cloud/config"
+                    :headers         (db/authBearer db)
+                    :format          (ajax/json-request-format)
+                    :params          {:cloud-id cloud-id}
+                    :response-format (ajax/json-response-format {:keywords? true})
+                    :on-success      [:process-load-cloud-response cloud-id]
+                    :on-failure      [:process-load-cloud-response cloud-id]}
+       }
+      )))
+

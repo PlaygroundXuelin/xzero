@@ -11,6 +11,7 @@
             [xzero.dashboard]
             [xzero.cmd :as cmd]
             [xzero.lst :as lst]
+            [xzero.cloud :as cloud]
             [xzero.db :as db]
             [xzero.async]
             [xzero.user :as user]
@@ -52,7 +53,11 @@
                    (if (db/hasPermission user [:page :lst])
                      [nav-link "#/lst" "List" :lst]
                      )
+                   (if (db/hasPermission user [:page :cloud])
+                     [nav-link "#/cloud" "Cloud" :cloud]
+                     )
                    [nav-link "#/dashboard" "Dashboard" :dashboard]
+                   ;                   [nav-link "#/home" "Docs" :home]
                     [user-link login?]
                    ]]])
     )
@@ -69,6 +74,7 @@
   {:home #'home-page
    :cmd #'cmd/cmd-page
    :lst #'lst/lst-page
+   :cloud #'cloud/cloud-page
    :dashboard #'xzero.dashboard/dashboard-page
    :user #'user/user-page})
 
@@ -85,6 +91,7 @@
     [["/" :home]
      ["/cmd" :cmd]
      ["/lst" :lst]
+     ["/cloud" :cloud]
      ["/dashboard" :dashboard]
      ["/user" :user]]))
 
@@ -115,7 +122,7 @@
 
   (xzero.async/bg-task 300000 300000
                        (fn [cnt ms] ms)
-                       (fn [] (rf/dispatch [:check-user])))
+                       (fn [] (rf/dispatch [:check-user nil])))
 
   (rf/dispatch [:fetch-docs])
   (hook-browser-navigation!)

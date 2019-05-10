@@ -34,6 +34,7 @@ done
   (cond
     (= permission [:page :cmd]) (and (= (:name user) "xuelin.wang@gmail.com") (:bearer user))
     (= permission [:page :lst]) (and (= (:name user) "xuelin.wang@gmail.com") (:bearer user))
+    (= permission [:page :cloud]) (and (= (:name user) "xuelin.wang@gmail.com") (:bearer user))
     :else true)
   )
 
